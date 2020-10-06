@@ -1,14 +1,15 @@
-<%@ page language="java" contentType="text/html; charset=EUC-KR" pageEncoding="EUC-KR" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
+<html lang="ru">
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-<html lang="ru">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=EUC-KR">
     <title>Meals</title>
 </head>
 <body>
-
-<table border>
+<h3><a href="index.html">Home</a></h3>
+<hr>
+<h2>Meals</h2>
+<table border=1>
     <tr>
         <th>date</th>
         <th>description</th>
@@ -27,7 +28,7 @@
             <td><a href="meals?action=edit&id=<c:out value="${meal.id}"/>">Update</a></td>
             <td><a href="meals?action=delete&id=<c:out value="${meal.id}"/>">Delete</a></td>
         </tr>
-    </c:forEach>>
+    </c:forEach>
 </table>
 <p><a href="meals?action=insert">Add Meal</a></p>
 </body>

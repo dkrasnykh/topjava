@@ -1,10 +1,8 @@
 package ru.javawebinar.topjava.web;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.javawebinar.topjava.dao.MealDao;
+import ru.javawebinar.topjava.dao.MealService;
 import ru.javawebinar.topjava.model.Meal;
-import ru.javawebinar.topjava.model.MealTo;
 import ru.javawebinar.topjava.util.MealsUtil;
 
 import javax.servlet.RequestDispatcher;
@@ -16,46 +14,53 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 public class MealServlet extends HttpServlet {
-    private static final Logger log = LoggerFactory.getLogger(MealServlet.class);
-    private static String INSERT_OR_EDIT = "/meal.jsp";
-    private static String LIST_MEAL = "/meals.jsp";
-    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-    private MealDao dao;
+    private final static String INSERT_OR_EDIT = "/meal.jsp";
+    private final static String LIST_MEAL = "/meals.jsp";
+    private final static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+    private MealService dao;
 
-    public MealServlet(){
-        super();
+    @Override
+    public void init() throws ServletException {
+        super.init();
         dao = new MealDao();
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String forward="";
+        req.setCharacterEncoding("UTF-8");
         String action = req.getParameter("action");
-        if(action == null) action = "listMeal";
-        List<MealTo> mealsTo;
-        if (action.equalsIgnoreCase("delete")){
-            long mealId = Long.parseLong(req.getParameter("id"));
-            dao.delete(mealId);
-            forward = LIST_MEAL;
-            mealsTo = MealsUtil.filteredByStreams(dao.getAll(), LocalTime.of(0, 0), LocalTime.of(23, 59), 2000);
-            req.setAttribute("meals", mealsTo);
-        } else if (action.equalsIgnoreCase("edit")){
-            forward = INSERT_OR_EDIT;
-            long mealId = Long.parseLong(req.getParameter("id"));
-            Meal meal = dao.getById(mealId);
-            req.setAttribute("meal", meal);
-        } else if (action.equalsIgnoreCase("listMeal")){
-            forward = LIST_MEAL;
-            mealsTo = MealsUtil.filteredByStreams(dao.getAll(), LocalTime.of(0, 0), LocalTime.of(23, 59), 2000);
-            req.setAttribute("meals", mealsTo);
-        } else {
-            forward = INSERT_OR_EDIT;
+        if (action == null) {
+            action = "listMeal";
         }
-        RequestDispatcher view = req.getRequestDispatcher(forward);
-        view.forward(req, resp);
+
+        Long mealId = null;
+        Meal meal = null;
+        String idparam = req.getParameter("id");
+        if (!(idparam == null || idparam.isEmpty())) {
+            mealId = Long.parseLong(req.getParameter("id"));
+            meal = dao.getById(mealId);
+        }
+
+        switch (action) {
+            case "delete":
+                dao.delete(mealId);
+                resp.sendRedirect(req.getContextPath() + "/meals");
+                break;
+            case "edit":
+                req.setAttribute("meal", meal);
+                req.getRequestDispatcher(INSERT_OR_EDIT).forward(req, resp);
+                break;
+            case "listMeal":
+                req.setAttribute("meals", MealsUtil.filteredByStreams(dao.getAll(), LocalTime.of(0, 0),
+                        LocalTime.of(23, 59), 2000));
+                req.getRequestDispatcher(LIST_MEAL).forward(req, resp);
+                break;
+            default:
+                req.getRequestDispatcher(INSERT_OR_EDIT).forward(req, resp);
+                break;
+        }
     }
 
     @Override
@@ -66,8 +71,8 @@ public class MealServlet extends HttpServlet {
         int calories = Integer.parseInt(req.getParameter("calories"));
 
         String mealId = req.getParameter("id");
-        if (mealId == null || mealId.isEmpty()){
-            Meal meal = new Meal(MealDao.generateId(), date, description, calories);
+        if (mealId == null || mealId.isEmpty()) {
+            Meal meal = new Meal(dao.generateId(), date, description, calories);
             dao.add(meal);
         } else {
             long id = Long.parseLong(req.getParameter("id"));
