@@ -34,7 +34,7 @@
         <tr>
             <td>Calories:</td>
             <td>
-                <input type="text" name="calories" value="${meal.calories}"/> <br/>
+                <input type="number" name="calories" value="${meal.calories}"/> <br/>
             </td>
         </tr>
         </tbody>
