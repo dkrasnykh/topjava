@@ -1,11 +1,9 @@
 package ru.javawebinar.topjava.repository.inmemory;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.repository.MealRepository;
 import ru.javawebinar.topjava.util.MealsUtil;
-import ru.javawebinar.topjava.web.user.ProfileRestController;
 
 import java.util.Collection;
 import java.util.Map;
@@ -18,17 +16,17 @@ public class InMemoryMealRepository implements MealRepository {
     private final Map<Integer, Meal> repository = new ConcurrentHashMap<>();
     private final AtomicInteger counter = new AtomicInteger(0);
 
-    @Autowired
-    private ProfileRestController userController;
-
     {
-        MealsUtil.meals.forEach(this::save);
+        for (Meal meal : MealsUtil.meals) {
+            this.save(meal, null);
+        }
     }
 
     @Override
-    public Meal save(Meal meal) {
+    public Meal save(Meal meal, Integer userID) {
         if (meal.isNew()) {
             meal.setId(counter.incrementAndGet());
+            meal.setUserId(userID);
             repository.put(meal.getId(), meal);
             return meal;
         }
@@ -37,8 +35,8 @@ public class InMemoryMealRepository implements MealRepository {
     }
 
     @Override
-    public boolean delete(int id) {
-        if (repository.get(id).getUserId().equals(userController.get().getId())) {
+    public boolean delete(int id, Integer userID) {
+        if (repository.get(id).getUserId().equals(userID)) {
             return repository.remove(id) != null;
         } else {
             return false;
@@ -46,8 +44,8 @@ public class InMemoryMealRepository implements MealRepository {
     }
 
     @Override
-    public Meal get(int id) {
-        if (repository.get(id).getUserId().equals(userController.get().getId())) {
+    public Meal get(int id, Integer userID) {
+        if (repository.get(id).getUserId().equals(userID)) {
             return repository.get(id);
         } else {
             return null;
@@ -55,8 +53,9 @@ public class InMemoryMealRepository implements MealRepository {
     }
 
     @Override
-    public Collection<Meal> getAll() {
+    public Collection<Meal> getAll(Integer userID) {
         return repository.values().stream()
+                .filter(meal -> meal.getUserId().equals(userID))
                 .sorted((m1, m2) -> m2.getDateTime().compareTo(m1.getDateTime()))
                 .collect(Collectors.toList());
     }
