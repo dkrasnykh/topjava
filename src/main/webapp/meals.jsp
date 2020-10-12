@@ -21,6 +21,15 @@
     <h3><a href="index.html">Home</a></h3>
     <hr/>
     <h2>Meals</h2>
+    <form action="meals">
+        <a>От даты (включая) - до даты (включая):</a><br>
+        <input type="date" name="date1">
+        <input type="date" name="date2"><br>
+        <a>От времени (включая) - до времени (исключая):</a><br>
+        <input type="time" name="time1">
+        <input type="time" name="time2"><br>
+        <button type="submit">Отфильтровать</button>
+    </form>
     <a href="meals?action=create">Add Meal</a>
     <br><br>
     <table border="1" cellpadding="8" cellspacing="0">
