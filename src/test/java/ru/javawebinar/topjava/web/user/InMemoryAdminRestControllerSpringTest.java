@@ -15,7 +15,7 @@ import static ru.javawebinar.topjava.UserTestData.USER_ID;
 
 @ContextConfiguration({
         "classpath:spring/spring-memory.xml",
-        "classpath:spring/spring-db.xml"
+        "classpath:spring/spring-app.xml"
 })
 @RunWith(SpringRunner.class)
 public class InMemoryAdminRestControllerSpringTest {
