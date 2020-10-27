@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import ru.javawebinar.topjava.model.Meal;
+import ru.javawebinar.topjava.model.User;
 import ru.javawebinar.topjava.repository.MealRepository;
 import ru.javawebinar.topjava.repository.UserRepository;
 
@@ -18,17 +19,11 @@ public class JpaMealRepository implements MealRepository {
     @PersistenceContext
     private EntityManager em;
 
-    private final UserRepository userRepository;
-    @Autowired
-    public JpaMealRepository(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
     @Override
     @Transactional
     public Meal save(Meal meal, int userId) {
         if (meal.isNew()) {
-            meal.setUser(userRepository.get(userId));
+            meal.setUser(em.find(User.class, userId));
             em.persist(meal);
             return meal;
         } else {

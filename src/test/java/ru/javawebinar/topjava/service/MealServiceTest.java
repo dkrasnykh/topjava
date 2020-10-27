@@ -1,6 +1,10 @@
 package ru.javawebinar.topjava.service;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -13,10 +17,21 @@ import ru.javawebinar.topjava.util.exception.NotFoundException;
 
 import javax.persistence.NoResultException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Month;
 
 import static org.junit.Assert.assertThrows;
-import static ru.javawebinar.topjava.MealTestData.*;
+import static ru.javawebinar.topjava.MealTestData.ADMIN_MEAL_ID;
+import static ru.javawebinar.topjava.MealTestData.MEAL1_ID;
+import static ru.javawebinar.topjava.MealTestData.MEAL_MATCHER;
+import static ru.javawebinar.topjava.MealTestData.NOT_FOUND;
+import static ru.javawebinar.topjava.MealTestData.admin_meal1;
+import static ru.javawebinar.topjava.MealTestData.getNew;
+import static ru.javawebinar.topjava.MealTestData.getUpdated;
+import static ru.javawebinar.topjava.MealTestData.meal1;
+import static ru.javawebinar.topjava.MealTestData.meal2;
+import static ru.javawebinar.topjava.MealTestData.meal3;
+import static ru.javawebinar.topjava.MealTestData.meals;
 import static ru.javawebinar.topjava.UserTestData.ADMIN_ID;
 import static ru.javawebinar.topjava.UserTestData.USER_ID;
 
@@ -27,9 +42,21 @@ import static ru.javawebinar.topjava.UserTestData.USER_ID;
 @RunWith(SpringRunner.class)
 @Sql(scripts = "classpath:db/populateDB.sql", config = @SqlConfig(encoding = "UTF-8"))
 public class MealServiceTest {
-
     @Autowired
     private MealService service;
+
+    @Rule
+    public final TestRule watchman = new TestWatcher() {
+        @Override
+        protected void starting(Description description) {
+            //super.starting(description);
+        }
+
+        @Override
+        protected void finished(Description description) {
+            super.finished(description);
+        }
+    };
 
     @Test
     public void delete() throws Exception {
