@@ -1,9 +1,9 @@
 package ru.javawebinar.topjava.service;
 
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
+import org.junit.rules.Stopwatch;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +15,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.util.exception.NotFoundException;
 
-import javax.persistence.NoResultException;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.Month;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertThrows;
 import static ru.javawebinar.topjava.MealTestData.ADMIN_MEAL_ID;
@@ -42,27 +43,34 @@ import static ru.javawebinar.topjava.UserTestData.USER_ID;
 @RunWith(SpringRunner.class)
 @Sql(scripts = "classpath:db/populateDB.sql", config = @SqlConfig(encoding = "UTF-8"))
 public class MealServiceTest {
+    static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(MealServiceTest.class);
+    static List<String> results = new ArrayList();
+
     @Autowired
     private MealService service;
 
     @Rule
-    public final TestRule watchman = new TestWatcher() {
+    public final Stopwatch STOPWATCH = new Stopwatch() {
         @Override
-        protected void starting(Description description) {
-            //super.starting(description);
+        protected void finished(long nanos, Description description) {
+            String result = description.getDisplayName() + " " + TimeUnit.NANOSECONDS.toMillis(nanos) + " ms";
+            results.add(result);
+            logger.info(result);
         }
+    };
 
+    @ClassRule
+    public static final Stopwatch STOPWATCH_CLASS = new Stopwatch() {
         @Override
-        protected void finished(Description description) {
-            super.finished(description);
+        protected void finished(long nanos, Description description) {
+            results.forEach((res) -> logger.info(res));
         }
     };
 
     @Test
     public void delete() throws Exception {
         service.delete(MEAL1_ID, USER_ID);
-        //assertThrows(NotFoundException.class, () -> service.get(MEAL1_ID, USER_ID));
-        assertThrows(NoResultException.class, () -> service.get(MEAL1_ID, USER_ID));
+        assertThrows(NotFoundException.class, () -> service.get(MEAL1_ID, USER_ID));
     }
 
     @Test
@@ -100,14 +108,12 @@ public class MealServiceTest {
 
     @Test
     public void getNotFound() throws Exception {
-        //assertThrows(NotFoundException.class, () -> service.get(NOT_FOUND, USER_ID));
-        assertThrows(NoResultException.class, () -> service.get(NOT_FOUND, USER_ID));
+        assertThrows(NotFoundException.class, () -> service.get(NOT_FOUND, USER_ID));
     }
 
     @Test
     public void getNotOwn() throws Exception {
-        //assertThrows(NotFoundException.class, () -> service.get(MEAL1_ID, ADMIN_ID));
-        assertThrows(NoResultException.class, () -> service.get(MEAL1_ID, ADMIN_ID));
+        assertThrows(NotFoundException.class, () -> service.get(MEAL1_ID, ADMIN_ID));
     }
 
     @Test
@@ -119,8 +125,7 @@ public class MealServiceTest {
 
     @Test
     public void updateNotOwn() throws Exception {
-        //assertThrows(NotFoundException.class, () -> service.update(meal1, ADMIN_ID));
-        assertThrows(NoResultException.class, () -> service.update(meal1, ADMIN_ID));
+        assertThrows(NotFoundException.class, () -> service.update(meal1, ADMIN_ID));
     }
 
     @Test
