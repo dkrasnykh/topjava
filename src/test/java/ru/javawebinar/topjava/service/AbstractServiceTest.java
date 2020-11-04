@@ -13,6 +13,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlConfig;
 import org.springframework.test.context.junit4.SpringRunner;
 import ru.javawebinar.topjava.ActiveDbProfileResolver;
+import ru.javawebinar.topjava.Profiles;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,8 +25,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 })
 @RunWith(SpringRunner.class)
 @Sql(scripts = "classpath:db/populateDB.sql", config = @SqlConfig(encoding = "UTF-8"))
-@ActiveProfiles(resolver = ActiveDbProfileResolver.class)
-public abstract class ServiceTest {
+//@ActiveProfiles(resolver = ActiveDbProfileResolver.class)
+public abstract class AbstractServiceTest {
     private static final Logger log = getLogger("result");
 
     private static final StringBuilder results = new StringBuilder();
@@ -48,19 +49,6 @@ public abstract class ServiceTest {
                 "\n---------------------------------" +
                 results +
                 "\n---------------------------------");
+        results.setLength(0);
     }
-
-    public abstract void create();
-
-    public abstract void delete();
-
-    public abstract void deletedNotFound();
-
-    public abstract void get();
-
-    public abstract void getNotFound();
-
-    public abstract void update();
-
-    public abstract void getAll();
 }
