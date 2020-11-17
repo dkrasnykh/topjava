@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessException;
+import ru.javawebinar.topjava.Profiles;
 import ru.javawebinar.topjava.UserTestData;
 import ru.javawebinar.topjava.model.Role;
 import ru.javawebinar.topjava.model.User;
@@ -41,7 +42,7 @@ public abstract class AbstractUserServiceTest extends AbstractServiceTest {
 
         String[] profiles1 = environment.getActiveProfiles();
         List<String> profiles = List.of(profiles1);
-        if (!profiles.contains("jdbc")){
+        if (!profiles.contains(Profiles.JDBC)){
             jpaUtil.clear2ndLevelHibernateCache();
         }
     }

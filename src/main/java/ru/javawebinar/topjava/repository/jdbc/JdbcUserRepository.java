@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
@@ -19,12 +18,8 @@ import ru.javawebinar.topjava.repository.UserRepository;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,39 +37,24 @@ public class JdbcUserRepository implements UserRepository {
     static class Extractor implements ResultSetExtractor<List<User>> {
         @Override
         public List<User> extractData(ResultSet rs) throws SQLException, DataAccessException {
-            List<User> result = new ArrayList<>();
-            Map<Integer, Set<Role>> map = new HashMap<>();
+            Map<Integer, User> users = new HashMap<>();
             while (rs.next()) {
                 Integer userId = Integer.parseInt(rs.getString("id"));
                 Role role = Role.valueOf(rs.getString("role"));
                 User user = new User(userId, rs.getString("name"), rs.getString("email"), rs.getString("password"), role);
                 user.setCaloriesPerDay(Integer.parseInt(rs.getString("calories_per_day")));
-                if (rs.getString("enabled").equals("t")) {
-                    user.setEnabled(Boolean.TRUE);
-                } else {
-                    user.setEnabled(Boolean.FALSE);
+                user.setEnabled(rs.getBoolean("enabled"));
+                user.setRegistered(rs.getDate("registered"));
+
+                User exist = users.putIfAbsent(userId, user);
+                if (exist != null) {
+                    Set<Role> set = exist.getRoles();
+                    set.add(role);
+                    exist.setRoles(set);
+                    users.put(userId, exist);
                 }
-                DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                try {
-                    String registred = rs.getString("registered").substring(0, 19);
-                    user.setRegistered(formatter.parse(registred));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                if (!result.contains(user)) {
-                    result.add(user);
-                }
-                Set<Role> temp = map.putIfAbsent(userId, new HashSet<>());
-                if (temp == null) {
-                    temp = new HashSet<>();
-                }
-                temp.add(role);
-                map.put(userId, temp);
             }
-            for (User user : result) {
-                user.setRoles(map.get(user.getId()));
-            }
-            return result;
+            return new ArrayList<>(users.values());
         }
     }
 
@@ -93,16 +73,11 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public User save(User user) {
         BeanPropertySqlParameterSource parameterSource = new BeanPropertySqlParameterSource(user);
-
         if (user.isNew()) {
             Number newKey = insertUser.executeAndReturnKey(parameterSource);
             user.setId(newKey.intValue());
-            insertRoles(user.getId(), List.of(user.getRoles().toArray(new Role[0])));
-
         } else {
             jdbcTemplate.update("DELETE FROM user_roles WHERE user_id=?", user.getId());
-            insertRoles(user.getId(), List.of(user.getRoles().toArray(new Role[0])));
-
             if (namedParameterJdbcTemplate.update("""
                        UPDATE users SET name=:name, email=:email, password=:password, 
                        registered=:registered, enabled=:enabled, calories_per_day=:caloriesPerDay WHERE id=:id
@@ -110,10 +85,11 @@ public class JdbcUserRepository implements UserRepository {
                 return null;
             }
         }
+        insertRoles(user.getId(), new ArrayList<>(user.getRoles()));
         return user;
     }
 
-    public void insertRoles(Integer userId, List<Role> roles){
+    public void insertRoles(Integer userId, List<Role> roles) {
         jdbcTemplate.batchUpdate("INSERT INTO user_roles (user_id, role) VALUES (?, ?)", new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -134,18 +110,21 @@ public class JdbcUserRepository implements UserRepository {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public User get(int id) {
         List<User> users = jdbcTemplate.query("SELECT * FROM users AS u LEFT JOIN user_roles AS r ON u.id = r.user_id WHERE u.id=?", RESULT_SET_EXTRACTOR, id);
         return DataAccessUtils.singleResult(users);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public User getByEmail(String email) {
         List<User> users = jdbcTemplate.query("SELECT * FROM users AS u LEFT JOIN user_roles AS r ON u.id = r.user_id WHERE email=?", RESULT_SET_EXTRACTOR, email);
         return DataAccessUtils.singleResult(users);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<User> getAll() {
         return jdbcTemplate.query("SELECT * FROM users AS u LEFT JOIN user_roles AS r ON u.id = r.user_id ORDER BY u.name, u.email", RESULT_SET_EXTRACTOR);
     }
