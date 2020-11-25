@@ -1,5 +1,7 @@
 package ru.javawebinar.topjava.to;
 
+import ru.javawebinar.topjava.web.SecurityUtil;
+
 import java.time.LocalDateTime;
 
 public class MealTo {
@@ -12,6 +14,10 @@ public class MealTo {
     private final int calories;
 
     private final boolean excess;
+
+    public MealTo(){
+        this(null, null, null, SecurityUtil.authUserCaloriesPerDay(), false);
+    }
 
     public MealTo(Integer id, LocalDateTime dateTime, String description, int calories, boolean excess) {
         this.id = id;
